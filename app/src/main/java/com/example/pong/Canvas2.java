@@ -22,10 +22,12 @@ public class Canvas2 extends View {
     Context context;
     Bitmap ball, paddle,paddle2;
     float ballX,ballY,paddleX,paddleY,paddle2X,paddle2Y,dWidth,dHeight,xDir=5,yDir=5,oldX,oldPaddleX;
-    int points=0,life=3;
+    int point=0,life=3;
     Random random;
     int ran,count=0;
     Paint textPaint = new Paint();
+    Paint healthPaint = new Paint();
+    MediaPlayer mpHit, mpOver,mpWall;
 
     float TEXT_SIZE = 60;
 
@@ -50,6 +52,10 @@ public class Canvas2 extends View {
         textPaint.setColor(Color.RED);
         textPaint.setTextSize(TEXT_SIZE);
         textPaint.setTextAlign(Paint.Align.LEFT);
+        healthPaint.setColor(Color.GREEN);
+        mpHit = MediaPlayer.create(context, R.raw.hit);
+        mpOver = MediaPlayer.create(context, R.raw.over);
+        mpWall = MediaPlayer.create(context,R.raw.wall);
 
 
 
@@ -62,13 +68,16 @@ public class Canvas2 extends View {
 
         if((ballX >= dWidth - ball.getWidth()) ){
             xDir=-5;
+            mpWall.start();
         }
         if(ballX<=0){
             xDir=5;
+            mpWall.start();
         }
         if(ballY <= 150){
             count++;
             yDir=5;
+            mpHit.start();
         }
         if(ballY > paddleY + paddle.getHeight()){
             ballX = dWidth/2-ball.getWidth()/2;
@@ -81,30 +90,39 @@ public class Canvas2 extends View {
                 && (ballX <= paddleX + paddle.getWidth())
                 && (ballY + ball.getHeight() >= paddleY)
                 && (ballY + ball.getHeight() <= paddleY + paddle.getHeight())){
+            mpHit.start();
             yDir=-5;
 
-            points++;
+            point++;
         }
         if(count==ran){
+            mpOver.start();
 
-            Intent intent2 = new Intent(context, GameOver.class);
-            intent2.putExtra("points", points);
+            Intent intent2 = new Intent(context,Over2.class);
+            intent2.putExtra("point", point);
             context.startActivity(intent2);
             ((Activity)context).finish();
         }
         if(life==0){
-            Intent intent = new Intent(context, GameOver.class);
-            intent.putExtra("points", points);
-            context.startActivity(intent);
-            ((Activity)context).finish();
+            mpOver.start();
+            Intent intent3 = new Intent(context, Over2.class);
+            intent3.putExtra("point", point);
+            context.startActivity(intent3);
+
         }
+        if(life == 2){
+            healthPaint.setColor(Color.YELLOW);
+        }else if(life == 1){
+            healthPaint.setColor(Color.RED);
+        }
+        canvas.drawRect(dWidth-200, 30,dWidth - 200 + 60*life, 80, healthPaint);
         ballX += xDir;
         ballY += yDir;
         paddle2X=ballX;
         paddle2Y=120;
         canvas.drawBitmap(ball, ballX, ballY, null);
         canvas.drawBitmap(paddle, paddleX, paddleY, null);
-        canvas.drawText("Score: "+points+"  "+ran, 20, TEXT_SIZE, textPaint);
+        canvas.drawText("Score: "+point, 20, TEXT_SIZE, textPaint);
         canvas.drawLine(0,100,dWidth,100,textPaint);
         canvas.drawBitmap(paddle2,paddle2X,120,null);
 

@@ -9,6 +9,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Point;
+import android.media.MediaPlayer;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
@@ -20,9 +21,10 @@ public class Canvas3 extends View {
     Bitmap ball, paddle,paddle2;
     float ballX,ballY,paddleX,paddleY,paddle2X,paddle2Y,dWidth,dHeight,xDir=5,yDir=5,oldX,oldPaddleX;
     int points=0;
-    Random random;
-    int ran,count=0;
+    int life=3;
     Paint textPaint = new Paint();
+    Paint healthPaint = new Paint();
+    MediaPlayer mpHit, mpOver,mpWall;
     float TEXT_SIZE = 60;
     public Canvas3(Context context) {
         super(context);
@@ -40,11 +42,15 @@ public class Canvas3 extends View {
         ballY=dHeight/2;
         paddleY = (dHeight * 45) / 50;
         paddleX = dWidth / 2 - paddle.getWidth() /2;
-        random=new Random();
-        ran=random.nextInt(30);
+
         textPaint.setColor(Color.RED);
         textPaint.setTextSize(TEXT_SIZE);
         textPaint.setTextAlign(Paint.Align.LEFT);
+        healthPaint.setColor(Color.GREEN);
+        mpHit = MediaPlayer.create(context, R.raw.hit);
+        mpOver = MediaPlayer.create(context, R.raw.over);
+        mpWall = MediaPlayer.create(context,R.raw.wall);
+
     }
 
     @Override
@@ -53,18 +59,22 @@ public class Canvas3 extends View {
         canvas.drawColor(Color.CYAN);
 
         if((ballX >= dWidth - ball.getWidth()) ){
-            xDir=-5;
+            mpWall.start();
+            xDir=-10;
         }
         if(ballX<=0){
-            xDir=5;
+            mpWall.start();
+            xDir=10;
         }
         if(ballY <= 150){
-            count++;
-            yDir=5;
+            mpHit.start();
+
+            yDir=10;
         }
         if(ballY > paddleY + paddle.getHeight()){
             ballX = dWidth/2-ball.getWidth()/2;
             ballY = dHeight/2;
+            life--;
 
 
         }
@@ -72,24 +82,31 @@ public class Canvas3 extends View {
                 && (ballX <= paddleX + paddle.getWidth())
                 && (ballY + ball.getHeight() >= paddleY)
                 && (ballY + ball.getHeight() <= paddleY + paddle.getHeight())){
-            yDir=-5;
+            mpHit.start();
+            yDir=-10;
 
             points++;
         }
-        if(count==ran){
-
-            Intent intent = new Intent(context, Over2.class);
-            intent.putExtra("points", points);
+        if(life==0){
+            mpOver.start();
+            Intent intent = new Intent(context, GameOver3.class);
             context.startActivity(intent);
             ((Activity)context).finish();
         }
+        if(life == 2){
+            healthPaint.setColor(Color.YELLOW);
+        }else if(life == 1){
+            healthPaint.setColor(Color.RED);
+        }
+        canvas.drawRect(dWidth-200, 30,dWidth - 200 + 60*life, 80, healthPaint);
+
         ballX += xDir;
         ballY += yDir;
         paddle2X=ballX;
         paddle2Y=120;
         canvas.drawBitmap(ball, ballX, ballY, null);
         canvas.drawBitmap(paddle, paddleX, paddleY, null);
-        canvas.drawText("Score: "+points+"  "+ran, 20, TEXT_SIZE, textPaint);
+        canvas.drawText("Score: "+points, 20, TEXT_SIZE, textPaint);
         canvas.drawLine(0,100,dWidth,100,textPaint);
         canvas.drawBitmap(paddle2,paddle2X,120,null);
         invalidate();
